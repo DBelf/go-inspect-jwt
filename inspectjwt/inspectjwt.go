@@ -16,10 +16,10 @@ func CLI(args []string) int {
 	var app appEnv
 	err := app.fromArgs(args)
 	if err != nil {
-		return 2
+		return 1
 	}
 	if err = app.run(); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Runtime error: %v\n", err)
+		_, _ = fmt.Fprintf(os.Stderr, "error while running app: %v\n", err)
 		return 1
 	}
 	return 0
@@ -34,14 +34,12 @@ func (app *appEnv) fromArgs(args []string) error {
 	tokenString := fl.String("t", "", "The token to inspect")
 
 	if err := fl.Parse(args); err != nil {
-		return err
+		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 	app.jwt = strings.TrimSpace(*tokenString)
 
 	if app.jwt == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "got an empty jwt!")
 		fl.Usage()
-		return flag.ErrHelp
 	}
 	return nil
 }
@@ -49,7 +47,7 @@ func (app *appEnv) fromArgs(args []string) error {
 func (app *appEnv) run() error {
 	simpleToken, err := parseToken(app.jwt)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read token: %w", err)
 	}
 
 	reflectedFields := reflect.ValueOf(*simpleToken)
@@ -64,7 +62,7 @@ func parseToken(tokenString string) (*simpleToken, error) {
 	parser := jwt.Parser{SkipClaimsValidation: true, UseJSONNumber: true}
 	token, _, err := parser.ParseUnverified(tokenString, &jwt.MapClaims{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not parse token: %w", err)
 	}
 	return tokenToSimpleToken(token), nil
 }
