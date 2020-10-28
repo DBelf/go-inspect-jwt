@@ -6,13 +6,11 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"os"
+	"reflect"
 	"strings"
 )
 
-const (
-	colorYellow = "\033[33m"
-	colorPurple = "\033[35m"
-)
+var colors = []string{"\033[35m", "\033[33m"}
 
 func CLI(args []string) int {
 	var app appEnv
@@ -49,12 +47,16 @@ func (app *appEnv) fromArgs(args []string) error {
 }
 
 func (app *appEnv) run() error {
-	token, err := parseToken(app.jwt)
+	simpleToken, err := parseToken(app.jwt)
 	if err != nil {
 		return err
 	}
-	prettyPrintJson(colorPurple, token.Header)
-	prettyPrintJson(colorYellow, token.Claims)
+
+	reflectedFields := reflect.ValueOf(*simpleToken)
+
+	for i := 0; i < reflectedFields.NumField(); i++ {
+		prettyPrintJson(colors[i], reflectedFields.Field(i).Interface())
+	}
 	return nil
 }
 
