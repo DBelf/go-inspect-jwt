@@ -26,17 +26,20 @@ func CLI(args []string) int {
 }
 
 type appEnv struct {
-	jwt string
+	jwt          string
+	checkExpired bool
 }
 
 func (app *appEnv) fromArgs(args []string) error {
 	fl := flag.NewFlagSet("inspect-jwt", flag.ContinueOnError)
 	tokenString := fl.String("t", "", "The token to inspect")
+	isExpiredCheck := fl.Bool("exp", false, "Check whether the token is expired")
 
 	if err := fl.Parse(args); err != nil {
 		return fmt.Errorf("failed to parse flags: %w", err)
 	}
 	app.jwt = strings.TrimSpace(*tokenString)
+	app.checkExpired = *isExpiredCheck
 
 	if app.jwt == "" {
 		fl.Usage()
@@ -51,11 +54,23 @@ func (app *appEnv) run() error {
 	}
 
 	reflectedFields := reflect.ValueOf(*simpleToken)
+	if app.checkExpired {
+		printTokenIsExpired(*simpleToken)
+	}
 
 	for i := 0; i < reflectedFields.NumField(); i++ {
 		prettyPrintJson(colors[i], reflectedFields.Field(i).Interface())
 	}
 	return nil
+}
+
+func printTokenIsExpired(token simpleToken) {
+	valid := token.Claims.Valid()
+	if valid == nil {
+		fmt.Println("Token is still valid.")
+	} else {
+		fmt.Println("Token is invalid.")
+	}
 }
 
 func parseToken(tokenString string) (*simpleToken, error) {
