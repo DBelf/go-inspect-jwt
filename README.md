@@ -22,6 +22,8 @@ $ inspectjwt -t eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiw
 
 The `-t` parameter is mandatory.
 
+The `-exp` parameter can be added to also determine whether the token is still valid. 
+
 The inpsected token will use colors to distinguish the token header and token claims.
 
 ---
